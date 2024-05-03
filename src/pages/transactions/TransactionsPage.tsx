@@ -1,8 +1,12 @@
-import AxiosClient from "@/lib/axios-client/axiosClient";
-import useLoadingStore from "@/store/loadingStore";
-import { Transaction } from "@/types/Transaction";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -11,27 +15,45 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import AxiosClient from "@/lib/axios-client/axiosClient";
+import useLoadingStore from "@/store/loadingStore";
+import { Transaction } from "@/types/Transaction";
+import { Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const setLoading = useLoadingStore((state) => state.setLoading);
 
-  useEffect(() => {
+  const location = useLocation();
+
+  const page = new URLSearchParams(location.search).get("page") || "1";
+
+  const getNextPage = () => {
+    return parseInt(page) + 1;
+  };
+
+  const getPrevPage = () => {
+    return parseInt(page) - 1 < 1 ? 1 : parseInt(page) - 1;
+  };
+
+  const deleteTransaction = async (id: string) => {
     setLoading(true);
-    AxiosClient()
-      .get("/entries")
+    await AxiosClient()
+      .delete(`/entries/${id}`)
+      .catch((error) => {
+        console.error(error);
+      });
+
+    await fetchTransactions();
+  };
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    await AxiosClient()
+      .get(`/entries?page=${page}`)
       .then((response) => {
         setTransactions(response.data.data.entries);
       })
@@ -41,6 +63,10 @@ const TransactionsPage = () => {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchTransactions();
   }, [setLoading]);
 
   return (
@@ -90,10 +116,17 @@ const TransactionsPage = () => {
                   >
                     Rs. {transaction.amount}/-
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="flex gap-4">
                     <Link to={`/transactions/${transaction._id}`}>
                       <Pencil size={15} />
                     </Link>
+                    <Trash2
+                      size={15}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        deleteTransaction(transaction._id);
+                      }}
+                    />
                   </TableCell>
                   <TableCell>
                     {new Date(transaction.createdAt).toLocaleString("sv-SE")}
@@ -108,7 +141,7 @@ const TransactionsPage = () => {
                   <TableCell colSpan={5}>
                     <div className="font-medium">
                       You don't have any transactions yet. <br />
-                      <Link to="/transaction/new" className="text-primary">
+                      <Link to="/transactions/new" className="text-primary">
                         Add a transaction
                       </Link>
                     </div>
@@ -120,16 +153,15 @@ const TransactionsPage = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" />
+                <PaginationPrevious
+                  href={`/transactions?page=${getPrevPage()}`}
+                />
               </PaginationItem>
               <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
+                <PaginationLink href="#">{page}</PaginationLink>
               </PaginationItem>
               <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
+                <PaginationNext href={`/transactions?page=${getNextPage()}`} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>

@@ -10,7 +10,7 @@ import {
 import AxiosClient from "@/lib/axios-client/axiosClient";
 import useLoadingStore from "@/store/loadingStore";
 import { Category } from "@/types/Category";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -21,9 +21,20 @@ const CategoriesPage = () => {
 
   const setLoading = useLoadingStore((state) => state.setLoading);
 
-  useEffect(() => {
+  const deleteCategory = async (id: string) => {
     setLoading(true);
-    AxiosClient()
+    await AxiosClient()
+      .delete(`/categories/${id}`)
+      .catch((error) => {
+        console.error(error);
+      });
+
+    await fetchCategories();
+  };
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    await AxiosClient()
       .get("/categories")
       .then((response) => {
         setTransactionCategories(response.data.data);
@@ -34,6 +45,10 @@ const CategoriesPage = () => {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchCategories();
   }, [setLoading]);
 
   return (
@@ -61,13 +76,17 @@ const CategoriesPage = () => {
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{category.name}</TableCell>
-                  <TableCell>
-                    <Link
-                      to={`/categories/${category._id}`}
-                      className="hover:underline"
-                    >
+                  <TableCell className="flex gap-4">
+                    <Link to={`/categories/${category._id}`}>
                       <Pencil size={15} />
                     </Link>
+                    <Trash2
+                      size={15}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        deleteCategory(category._id);
+                      }}
+                    />
                   </TableCell>
                   <TableCell>
                     {new Date(category.createdAt).toLocaleString("sv-SE")}
