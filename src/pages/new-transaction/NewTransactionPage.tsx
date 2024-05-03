@@ -76,8 +76,10 @@ const NewTransactionPage = () => {
         });
       }
       toast({
-        title: "Product created",
-        description: `Product ${response.data.data.name} created successfully`,
+        title: `Transaction ${id ? "Updated" : "Created"}`,
+        description: `Transaction ${response.data.data.title} ${
+          id ? "updated" : "created"
+        } successfully`,
       });
       navigate("/transactions");
     } catch (error) {
@@ -86,7 +88,7 @@ const NewTransactionPage = () => {
         title: "Error",
         description: `An error occurred while ${
           id ? "updating" : "creating"
-        } the product`,
+        } the transaction`,
         variant: "destructive",
       });
     } finally {

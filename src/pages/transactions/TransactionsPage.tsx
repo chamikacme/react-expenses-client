@@ -1,9 +1,15 @@
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
@@ -17,13 +23,21 @@ import {
 } from "@/components/ui/table";
 import AxiosClient from "@/lib/axios-client/axiosClient";
 import useLoadingStore from "@/store/loadingStore";
+import { PaginationData } from "@/types/PaginationData";
 import { Transaction } from "@/types/Transaction";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const [paginationData, setPaginationData] = useState<PaginationData>({
+    totalEntries: 0,
+    itemsPerPage: 10,
+    currentPage: 1,
+    totalPages: 1,
+  });
 
   const setLoading = useLoadingStore((state) => state.setLoading);
 
@@ -32,11 +46,13 @@ const TransactionsPage = () => {
   const page = new URLSearchParams(location.search).get("page") || "1";
 
   const getNextPage = () => {
-    return parseInt(page) + 1;
+    return paginationData.currentPage < paginationData.totalPages
+      ? paginationData.currentPage + 1
+      : paginationData.totalPages;
   };
 
   const getPrevPage = () => {
-    return parseInt(page) - 1 < 1 ? 1 : parseInt(page) - 1;
+    return paginationData.currentPage > 1 ? paginationData.currentPage - 1 : 1;
   };
 
   const deleteTransaction = async (id: string) => {
@@ -56,6 +72,7 @@ const TransactionsPage = () => {
       .get(`/entries?page=${page}`)
       .then((response) => {
         setTransactions(response.data.data.entries);
+        setPaginationData(response.data.data.pagination);
       })
       .catch((error) => {
         console.error(error);
@@ -78,7 +95,7 @@ const TransactionsPage = () => {
             <Button>New</Button>
           </Link>
         </div>
-        <div className="grid gap-2">
+        <div className="rounded-md border bg-white p-4">
           <Table>
             <TableHeader>
               <TableRow>
@@ -87,15 +104,20 @@ const TransactionsPage = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Actions</TableHead>
                 <TableHead>Created at</TableHead>
                 <TableHead>Updated at</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.map((transaction, index) => (
                 <TableRow key={index}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>
+                    {(paginationData.currentPage - 1) *
+                      paginationData.itemsPerPage +
+                      index +
+                      1}
+                  </TableCell>
                   <TableCell>{transaction.title}</TableCell>
                   <TableCell
                     className={`${
@@ -116,23 +138,39 @@ const TransactionsPage = () => {
                   >
                     Rs. {transaction.amount}/-
                   </TableCell>
-                  <TableCell className="flex gap-4">
-                    <Link to={`/transactions/${transaction._id}`}>
-                      <Pencil size={15} />
-                    </Link>
-                    <Trash2
-                      size={15}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        deleteTransaction(transaction._id);
-                      }}
-                    />
-                  </TableCell>
+
                   <TableCell>
                     {new Date(transaction.createdAt).toLocaleString("sv-SE")}
                   </TableCell>
                   <TableCell>
                     {new Date(transaction.updatedAt).toLocaleString("sv-SE")}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild className="mx-auto">
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <Link to={`/transactions/${transaction._id}`}>
+                          <DropdownMenuItem className="gap-2">
+                            <Pencil size={13} /> Edit
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            deleteTransaction(transaction._id);
+                          }}
+                          className="gap-2"
+                        >
+                          <Trash2 size={13} />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -151,14 +189,14 @@ const TransactionsPage = () => {
             </TableBody>
           </Table>
           <Pagination>
-            <PaginationContent>
+            <PaginationContent className="flex items-center gap-2">
               <PaginationItem>
                 <PaginationPrevious
                   href={`/transactions?page=${getPrevPage()}`}
                 />
               </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">{page}</PaginationLink>
+              <PaginationItem className="font-medium text-sm">
+                {paginationData.currentPage} of {paginationData.totalPages}
               </PaginationItem>
               <PaginationItem>
                 <PaginationNext href={`/transactions?page=${getNextPage()}`} />

@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -10,7 +17,7 @@ import {
 import AxiosClient from "@/lib/axios-client/axiosClient";
 import useLoadingStore from "@/store/loadingStore";
 import { Category } from "@/types/Category";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -66,9 +73,9 @@ const CategoriesPage = () => {
               <TableRow>
                 <TableHead>#</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Actions</TableHead>
                 <TableHead>Created at</TableHead>
                 <TableHead>Updated at</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,23 +83,38 @@ const CategoriesPage = () => {
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{category.name}</TableCell>
-                  <TableCell className="flex gap-4">
-                    <Link to={`/categories/${category._id}`}>
-                      <Pencil size={15} />
-                    </Link>
-                    <Trash2
-                      size={15}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        deleteCategory(category._id);
-                      }}
-                    />
-                  </TableCell>
                   <TableCell>
                     {new Date(category.createdAt).toLocaleString("sv-SE")}
                   </TableCell>
                   <TableCell>
                     {new Date(category.updatedAt).toLocaleString("sv-SE")}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild className="mx-auto">
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <Link to={`/categories/${category._id}`}>
+                          <DropdownMenuItem className="gap-2">
+                            <Pencil size={13} /> Edit
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            deleteCategory(category._id);
+                          }}
+                          className="gap-2"
+                        >
+                          <Trash2 size={13} />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

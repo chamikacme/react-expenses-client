@@ -47,8 +47,10 @@ const NewCategoryPage = () => {
         });
       }
       toast({
-        title: "Transaction category created",
-        description: `Transaction category ${response.data.data.name} created successfully`,
+        title: `Category ${id ? "Updated" : "Created"}`,
+        description: `Transaction category ${response.data.data.name} ${
+          id ? "updated" : "created"
+        } successfully`,
       });
       navigate("/categories");
     } catch (error) {
@@ -57,7 +59,7 @@ const NewCategoryPage = () => {
         title: "Error",
         description: `An error occurred while ${
           id ? "updating" : "creating"
-        } the transaction category`,
+        } the category`,
         variant: "destructive",
       });
     } finally {
